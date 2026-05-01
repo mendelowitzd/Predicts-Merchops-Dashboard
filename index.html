@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ Predicts Merch Ops Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #07111f;
+  --bg2: #0c1829;
+  --card: #101e30;
+  --card2: #162438;
+  --border: #1c2f47;
+  --accent: #009cde;
+  --accent2: #00d4ff;
+  --text: #dde8f5;
+  --text2: #7a9bb8;
+  --text3: #4a6a88;
+  --green: #00e676;
+  --yellow: #ffc107;
+  --red: #ff4444;
+  --nba: #c9082a;
+  --mlb: #002d72;
+  --nhl: #0033a0;
+  --pga: #1a6b3c;
+  --ucl: #1c1ccc;
+  --epl: #3d0099;
+  --wnba: #f26522;
+  --tennis: #8bc34a;
+  --combo: #e65100;
+  --other: #455a64;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+a { color: var(--accent); text-decoration: none; }
+
+/* === HEADER === */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.header-left { display: flex; align-items: center; gap: 14px; }
+.logo { font-size: 15px; font-weight: 800; letter-spacing: 0.5px; }
+.logo span { color: var(--accent); }
+.env-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  background: rgba(0,156,222,0.12); color: var(--accent);
+  border: 1px solid rgba(0,156,222,0.3); border-radius: 4px;
+  padding: 2px 8px; text-transform: uppercase;
+}
+.header-right { display: flex; align-items: center; gap: 12px; }
+.ts { font-size: 11px; color: var(--text3); }
+.countdown {
+  font-size: 11px; color: var(--text2);
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 5px; padding: 4px 10px;
+  font-variant-numeric: tabular-nums;
+}
+.btn-refresh {
+  background: var(--accent); border: none; color: #fff;
+  font-size: 12px; font-weight: 700; padding: 6px 14px;
+  border-radius: 6px; cursor: pointer; transition: opacity 0.2s;
+}
+.btn-refresh:hover { opacity: 0.85; }
+.btn-refresh:disabled { opacity: 0.5; cursor: default; }
+
+/* === STATS BAR === */
+.stats-bar {
+  display: flex; gap: 1px;
+  background: var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.stat-pill {
+  flex: 1; background: var(--bg2);
+  padding: 14px 20px; display: flex; flex-direction: column; gap: 3px;
+}
+.stat-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+.stat-value { font-size: 22px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.stat-value.accent { color: var(--accent); }
+.stat-delta { font-size: 11px; color: var(--text3); }
+.stat-delta.up { color: var(--green); }
+.stat-delta.down { color: var(--red); }
+
+/* === LAYOUT === */
+.dashboard-body { padding: 16px; display: flex; flex-direction: column; gap: 16px; max-width: 1600px; margin: 0 auto; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* === CARDS === */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.card-header h2 { font-size: 13px; font-weight: 700; }
+.card-sub, .card-date { font-size: 11px; color: var(--text3); }
+.card-body { padding: 16px; }
+
+/* === PRIORITY TABLE === */
+.priority-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+.priority-col-header {
+  padding: 10px 16px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--text3);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.priority-row {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 0;
+  border-bottom: 1px solid rgba(28,47,71,0.5);
+  align-items: center;
+  transition: background 0.15s;
+}
+.priority-row:hover { background: rgba(255,255,255,0.02); }
+.priority-row:last-child { border-bottom: none; }
+.pr-rank {
+  font-size: 11px; font-weight: 800; color: var(--text3);
+  padding: 10px 0 10px 14px;
+  font-variant-numeric: tabular-nums;
+}
+.pr-content { padding: 10px 14px 10px 0; }
+.pr-market {
+  font-size: 12px; font-weight: 600; color: var(--text);
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.pr-time { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+/* Order volume side */
+.ov-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 28px;
+  gap: 0;
+  border-bottom: 1px solid rgba(28,47,71,0.5);
+  align-items: center;
+  padding: 10px 16px;
+}
+.ov-row:last-child { border-bottom: none; }
+.ov-count {
+  font-size: 13px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ov-volume { font-size: 11px; color: var(--text2); margin-top: 1px; }
+.ov-bar-wrap { height: 4px; background: var(--border); border-radius: 2px; margin-top: 6px; }
+.ov-bar { height: 4px; border-radius: 2px; transition: width 0.5s; }
+.ov-status {
+  width: 10px; height: 10px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.ov-status.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.ov-status.yellow { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+.ov-status.red { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.ov-status.grey { background: var(--text3); }
+.ov-row.green { border-left: 2px solid rgba(0,230,118,0.3); }
+.ov-row.yellow { border-left: 2px solid rgba(255,193,7,0.3); }
+.ov-row.red { border-left: 2px solid rgba(255,68,68,0.3); }
+.ov-nodata { font-size: 11px; color: var(--text3); font-style: italic; }
+
+/* === SPORT BADGE === */
+.sport-badge {
+  font-size: 9px; font-weight: 800; letter-spacing: 0.5px;
+  padding: 1px 5px; border-radius: 3px; text-transform: uppercase;
+  flex-shrink: 0;
+}
+.badge-NBA { background: rgba(201,8,42,0.2); color: #ff6b85; border: 1px solid rgba(201,8,42,0.4); }
+.badge-MLB { background: rgba(0,45,114,0.3); color: #6699ff; border: 1px solid rgba(0,45,114,0.6); }
+.badge-NHL { background: rgba(0,51,160,0.2); color: #5588ff; border: 1px solid rgba(0,51,160,0.4); }
+.badge-PGA { background: rgba(26,107,60,0.25); color: #4dbb7a; border: 1px solid rgba(26,107,60,0.5); }
+.badge-UCL { background: rgba(28,28,204,0.2); color: #8888ff; border: 1px solid rgba(28,28,204,0.4); }
+.badge-EPL { background: rgba(61,0,153,0.25); color: #cc88ff; border: 1px solid rgba(61,0,153,0.5); }
+.badge-WNBA { background: rgba(242,101,34,0.2); color: #ff9955; border: 1px solid rgba(242,101,34,0.4); }
+.badge-Tennis { background: rgba(139,195,74,0.2); color: #a8d878; border: 1px solid rgba(139,195,74,0.4); }
+.badge-Combo { background: rgba(230,81,0,0.2); color: #ff8a50; border: 1px solid rgba(230,81,0,0.4); }
+.badge-Other { background: rgba(69,90,100,0.2); color: #90a4ae; border: 1px solid rgba(69,90,100,0.4); }
+
+/* === SPORT TABLE === */
+.sport-table { width: 100%; border-collapse: collapse; }
+.sport-table th {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--text3); text-align: left; padding: 8px 14px; border-bottom: 1px solid var(--border);
+}
+.sport-table td { padding: 9px 14px; border-bottom: 1px solid rgba(28,47,71,0.4); font-size: 12px; }
+.sport-table tr:last-child td { border-bottom: none; }
+.sport-table .rank-num { color: var(--text3); font-weight: 700; font-size: 11px; }
+.sport-table .pct { color: var(--text2); }
+.sport-table .delta { font-size: 11px; text-align: right; }
+.delta-up { color: var(--green); }
+.delta-down { color: var(--red); }
+.delta-flat { color: var(--text3); }
+
+/* === CHART WRAP === */
+.chart-wrap { position: relative; padding: 16px; height: 240px; }
+.chart-center {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center; pointer-events: none;
+}
+.chart-center .cc-total { font-size: 22px; font-weight: 800; }
+.chart-center .cc-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+.bar-chart-wrap { padding: 16px 16px 12px; }
+
+/* === TOP EVENTS === */
+.top-events-list { padding: 8px 0; }
+.top-event-row {
+  display: grid; grid-template-columns: 26px 1fr auto;
+  gap: 8px; align-items: start;
+  padding: 9px 16px; border-bottom: 1px solid rgba(28,47,71,0.4);
+  transition: background 0.15s;
+}
+.top-event-row:hover { background: rgba(255,255,255,0.02); }
+.top-event-row:last-child { border-bottom: none; }
+.te-rank { font-size: 11px; font-weight: 800; color: var(--text3); padding-top: 1px; }
+.te-rank.gold { color: #ffd700; }
+.te-rank.silver { color: #b0bec5; }
+.te-rank.bronze { color: #cd7f32; }
+.te-info { }
+.te-name { font-size: 12px; font-weight: 600; color: var(--text); }
+.te-meta { font-size: 10px; color: var(--text3); margin-top: 2px; }
+.te-stats { text-align: right; }
+.te-count { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.te-vol { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+/* === LOADING / ERROR === */
+.loading {
+  padding: 32px; text-align: center; color: var(--text3);
+  font-size: 12px;
+}
+.loading::after { content: ''; animation: dots 1.4s infinite; }
+@keyframes dots {
+  0%,20% { content: '.'; }
+  40% { content: '..'; }
+  60%,100% { content: '...'; }
+}
+.error-state {
+  padding: 40px 24px; text-align: center; color: var(--text2); font-size: 13px;
+}
+.error-state .err-icon { font-size: 32px; margin-bottom: 12px; }
+.error-state .err-title { font-weight: 700; margin-bottom: 8px; color: var(--text); }
+.error-state .err-detail { color: var(--text3); font-size: 12px; }
+
+/* === MISC === */
+.legend-row { display: flex; gap: 20px; padding: 12px 16px 8px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* === STALE BANNER === */
+.stale-banner {
+  background: rgba(255,193,7,0.08); border-bottom: 1px solid rgba(255,193,7,0.2);
+  color: #ffc107; padding: 7px 16px; text-align: center;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .two-col { grid-template-columns: 1fr; }
+  .priority-grid { grid-template-columns: 1fr; }
+  .stats-bar { flex-wrap: wrap; }
+  .stat-pill { min-width: 50%; }
+}
+</style>
+</head>
+<body>
+
+<div id="staleBanner" class="stale-banner">
+  ⏱ Data is more than 20 minutes old. The GitHub Actions refresh job may need attention.
+</div>
+
+<header>
+  <div class="header-left">
+    <span class="logo">⚡ <span>PREDICTS</span> MERCH OPS</span>
+    <span class="env-badge">Futures FE Prod</span>
+  </div>
+  <div class="header-right">
+    <span id="lastUpdated" class="ts">—</span>
+    <span id="countdown" class="countdown">Next check: 10:00</span>
+    <button id="refreshBtn" class="btn-refresh" onclick="refreshAll()">↻ Refresh Now</button>
+  </div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat-pill">
+    <span class="stat-label">Total Orders Today</span>
+    <span class="stat-value" id="statOrders">—</span>
+    <span id="statOrdersDelta" class="stat-delta"></span>
+  </div>
+  <div class="stat-pill">
+    <span class="stat-label">Trade Volume Today</span>
+    <span class="stat-value accent" id="statVolume">—</span>
+  </div>
+  <div class="stat-pill">
+    <span class="stat-label">Active Market Types</span>
+    <span class="stat-value" id="statMarkets">—</span>
+  </div>
+  <div class="stat-pill">
+    <span class="stat-label">Leading Sport</span>
+    <span class="stat-value" id="statTopSport">—</span>
+  </div>
+</div>
+
+<div class="dashboard-body">
+
+  <!-- SECTION 1: Priority vs Volume -->
+  <div class="card">
+    <div class="card-header">
+      <h2>📋 Display Priority vs. Live Order Volume</h2>
+      <span class="card-date" id="todayLabel">—</span>
+    </div>
+    <div class="priority-grid" id="priorityGrid">
+      <div class="loading">Loading data</div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Outperforming priority rank</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div>Roughly in line (±3 positions)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Underperforming vs. expected rank</div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: Sport Share -->
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header">
+        <h2>🥧 Sport Share of Orders — Today</h2>
+        <span class="card-sub">by Market Category</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="sportChart"></canvas>
+        <div id="sportCenter" class="chart-center">
+          <div class="cc-total" id="ccTotal">—</div>
+          <div class="cc-label">orders</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h2>Sport Rankings</h2>
+        <span class="card-sub">vs. yesterday same time</span>
+      </div>
+      <div id="sportTableWrap" class="loading">Loading</div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: Market Type + Source -->
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header">
+        <h2>📊 Orders by Market Type</h2>
+        <span class="card-sub">Today</span>
+      </div>
+      <div class="bar-chart-wrap" style="height:240px; position:relative;">
+        <canvas id="marketChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h2>📍 Source of Trade</h2>
+        <span class="card-sub">by Source property</span>
+      </div>
+      <div class="bar-chart-wrap" style="height:240px; position:relative;">
+        <canvas id="sourceChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: Top Events -->
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header">
+        <h2>🏆 Top 10 Events — Today</h2>
+      </div>
+      <div id="topTodayWrap" class="loading">Loading</div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h2>📈 Top 10 Events — This Week</h2>
+        <span class="card-sub" id="weekLabel">Mon–Today</span>
+      </div>
+      <div id="topWeekWrap" class="loading">Loading</div>
+    </div>
+  </div>
+
+</div><!-- end dashboard-body -->
+
+<script>
+// ============================================================
+//  THIS WEEK'S MERCHANDISING PLAN  (week of Apr 27 – May 3, 2026)
+//  Source: Predicts Merchandising Plan.xlsx – "Market Priority" tab
+//  Update each Monday with the new week's schedule.
+// ============================================================
+const PLAN_WEEK = {
+  'MONDAY 4/27':    ['NBA Combo 1 8:00 PM','NBA Combo 2 8:00 PM','NBA DET @ ORL 8:00 PM (NBC)','NBA OKC @ PHX 9:30 PM (NBC)','NBA MIN @ DEN 10:30 PM (NBC)','MLB TB @ CLE 6:10 PM (FS1)','MLB STL @ PIT 6:40 PM','NHL PHI @ PIT 7:00 PM (ESPN)','MLB BOS @ TOR 7:07 PM','MLB SEA @ MIN 7:40 PM','MLB LAA @ CHW 7:40 PM','MLB NYY @ TEX 8:05 PM','NHL VGK @ UTA 9:30 PM (ESPN)','MLB CHC @ SD 9:40 PM','MLB MIA @ LAD 10:10 PM','ATP Madrid Open Tennis','WTA Madrid Open Tennis'],
+  'TUESDAY 4/28':   ['NBA Combo 1 7:00 PM','NBA Combo 2 7:00 PM','UCL MUN @ PSG 3:00 PM','NBA PHI @ BOS 7:00 PM (ESPN)','NBA ATL @ NY 8:00 PM (NBC)','NBA POR @ SA 9:30 PM (ESPN)','MLB TB @ CLE 6:10 PM','MLB HOU @ BAL 6:35 PM','MLB COL @ CIN 6:40 PM','MLB SF @ PHI 6:40 PM','MLB STL @ PIT 6:40 PM','MLB BOS @ TOR 7:07 PM','MLB WSH @ NYM 7:10 PM','MLB DET @ ATL 7:15 PM (TBS)','NHL BOS @ BUF 7:30 PM (TNT)','MLB SEA @ MIN 7:40 PM','MLB ARI @ MIL 7:40 PM','MLB LAA @ CHW 7:40 PM','NHL MIN @ DAL 8:00 PM (ESPN2)','MLB NYY @ TEX 8:05 PM','MLB CHC @ SD 9:40 PM','MLB KC @ ATH 9:40 PM','NHL ANA @ EDM 10:00 PM (TNT)','MLB MIA @ LAD 10:10 PM','ATP Madrid Open Tennis TBD','WTA Madrid Open Tennis TBD'],
+  'WEDNESDAY 4/29': ['NBA Combo 1 7:00 PM','NBA Combo 2 7:00 PM','MLB TB @ CLE 1:10 PM','MLB LAA @ CHW 1:10 PM','MLB SEA @ MIN 1:40 PM','MLB NYY @ TEX 2:35 PM','UCL ARS @ ATM 3:00 PM','MLB BOS @ TOR 3:07 PM','MLB MIA @ LAD 3:10 PM','MLB CHC @ SD 4:10 PM','NBA ORL @ DET 7:00 PM','NBA TOR @ CLE 7:30 PM','MLB HOU @ BAL 6:35 PM','MLB SF @ PHI 6:40 PM (MLB Network)','MLB COL @ CIN 6:40 PM','MLB STL @ PIT 6:40 PM','MLB WSH @ NYM 7:10 PM','MLB DET @ ATL 7:15 PM','MLB ARI @ MIL 7:40 PM','NHL UTA @ VGK TBD','NHL MTL @ TB TBD','NHL PIT @ PHI TBD','NBA HOU @ LAL 10:00 PM','ATP Madrid Open Tennis TBD','WTA Madrid Open Tennis TBD'],
+  'THURSDAY 4/30':  ['PGA Cadillac Championship 7:00 AM','NBA Combo 1 TBD','NBA Combo 2 TBD','MLB DET @ ATL 12:15 PM','MLB HOU @ BAL 12:35 PM','MLB STL @ PIT 12:35 PM','MLB COL @ CIN 12:40 PM','MLB SF @ PHI 1:05 PM','MLB WSH @ NYM 1:10 PM','MLB ARI @ MIL 1:40 PM','MLB KC @ ATH 3:05 PM','NBA SA @ POR TBD','NBA NY @ ATL TBD','NBA DEN @ MIN TBD','NBA BOS @ PHI TBD','MLB TOR @ MIN 7:40 PM','NHL EDM @ ANA TBD','NHL DAL @ MIN TBD','ATP Madrid Open Tennis TBD','WTA Madrid Open Tennis TBD'],
+  'FRIDAY 5/1':     ['PGA Cadillac Championship 7:00 AM','NBA Combo 1 7:00 PM','NBA Combo 2 7:00 PM','MLB Combo 1 7:00 PM','MLB Combo 2 7:00 PM','MLB ARI @ CHC 2:20 PM','NBA DET @ ORL 7:00 PM','NBA CLE @ TOR 7:30 PM','NBA LAL @ HOU 9:30 PM','MLB CIN @ PIT 6:45 PM (APPLE TV)','MLB TEX @ DET 6:40 PM','MLB MIL @ WSH 6:45 PM','NHL TB @ MTL 7:00 PM (ESPN2)','MLB BAL @ NYY 7:05 PM','MLB HOU @ BOS 7:10 PM','MLB PHI @ MIA 7:10 PM','MLB SF @ TB 7:10 PM','NHL BUF @ BOS 7:30 PM (ESPN)','MLB TOR @ MIN 8:10 PM','MLB LAD @ STL 8:15 PM','MLB ATL @ COL 8:40 PM','MLB KC @ SEA 9:45 PM (APPLE TV)','MLB NYM @ LAA 9:38 PM','MLB CHW @ SD 9:40 PM','MLB CLE @ ATH 9:40 PM','NHL VGK @ UTA 10:00 PM (ESPN)'],
+  'SATURDAY 5/2':   ['PGA Cadillac Championship 7:00 AM','MLB The Opening Act Combo 1:35 PM','MLB The Afternoon Launch Combo 4:05 PM','MLB BAL @ NYY 1:35 PM','MLB TOR @ MIN 2:10 PM','MLB ARI @ CHC 2:20 PM','MLB CIN @ PIT 4:05 PM (FS1)','MLB MIL @ WSH 4:05 PM','MLB CLE @ ATH 4:05 PM','MLB HOU @ BOS 4:10 PM','MLB PHI @ MIA 4:10 PM','NBA Combo 1 7:30 PM','NBA Combo 2 7:30 PM','NBA PHI @ BOS 7:30 PM (NBC, PEACOCK)','MLB SF @ TB 6:10 PM','MLB TEX @ DET 7:15 PM (FOX)','MLB LAD @ STL 7:15 PM (FOX)','NHL PHI @ CAR 8:00 PM (ABC)','MLB ATL @ COL 8:10 PM','MLB CHW @ SD 8:40 PM','MLB NYM @ LAA 9:38 PM','MLB KC @ SEA 9:40 PM'],
+  'SUNDAY 5/3':     ['PGA Cadillac Championship 7:00 AM','NBA Combo 1 TBD','NBA Combo 2 TBD','NBA TOR @ CLE TBD','NBA ORL @ DET TBD','NBA PHX @ OKC TBD','NBA HOU @ LAL TBD','MLB TOR @ MIN 12:35 PM','MLB BAL @ NYY 1:35 PM','MLB CIN @ PIT 1:35 PM','MLB MIL @ WSH 1:35 PM','MLB PHI @ MIA 1:40 PM','MLB SF @ TB 1:40 PM','MLB LAD @ STL 2:15 PM','MLB ARI @ CHC 2:20 PM','MLB CLE @ ATH 4:05 PM','MLB NYM @ LAA 4:07 PM','MLB CHW @ SD 4:10 PM','MLB KC @ SEA 4:10 PM','MLB ATL @ COL 3:10 PM','MLB HOU @ BOS 1:35 PM','MLB TEX @ DET 7:20 PM (NBC)','NHL BOS @ BUF TBD','NHL MTL @ TB TBD','NHL UTA @ VGK TBD','ATP Madrid Open Tennis TBD','WTA Madrid Open Tennis TBD'],
+};
+
+// ============================================================
+//  UTILITY FUNCTIONS
+// ============================================================
+function getTodayKey() {
+  const days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+  const d = new Date();
+  return `${days[d.getDay()]} ${d.getMonth()+1}/${d.getDate()}`;
+}
+
+function getMondayDate() {
+  const d = new Date();
+  const diff = d.getDay() === 0 ? -6 : 1 - d.getDay();
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function formatCount(n) {
+  if (n == null || isNaN(n)) return '—';
+  return Number(n).toLocaleString();
+}
+
+function formatDollar(n) {
+  if (!n || n === 0) return '';
+  if (n >= 1000000) return `$${(n/1000000).toFixed(1)}M`;
+  if (n >= 1000) return `$${(n/1000).toFixed(1)}K`;
+  return `$${Number(n).toFixed(0)}`;
+}
+
+function detectSport(name) {
+  if (!name) return 'Other';
+  const m = name.toUpperCase();
+  if (m.startsWith('NBA')) return 'NBA';
+  if (m.startsWith('MLB')) return 'MLB';
+  if (m.startsWith('NHL')) return 'NHL';
+  if (m.startsWith('PGA')) return 'PGA';
+  if (m.startsWith('UCL')) return 'UCL';
+  if (m.startsWith('EPL')) return 'EPL';
+  if (m.startsWith('WNBA')) return 'WNBA';
+  if (m.startsWith('ATP') || m.startsWith('WTA') || m.includes('TENNIS')) return 'Tennis';
+  if (m.includes('COMBO')) return 'Combo';
+  return 'Other';
+}
+
+function sportColor(sport) {
+  return {
+    'NBA':'#c9082a','MLB':'#1a56b0','NHL':'#0044cc','PGA':'#1a6b3c',
+    'UCL':'#3333ff','EPL':'#7700cc','WNBA':'#f26522','Tennis':'#8bc34a',
+    'Combo':'#e65100','Other':'#546e7a','Golf':'#1a6b3c',
+  }[sport] || '#546e7a';
+}
+
+// ============================================================
+//  DATA FETCH  —  reads data.json written by GitHub Actions
+// ============================================================
+async function fetchData() {
+  const res = await fetch('./data.json?t=' + Date.now());
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// ============================================================
+//  SECTION 1: PRIORITY vs LIVE VOLUME
+// ============================================================
+function renderPrioritySection(data) {
+  const todayKey = getTodayKey();
+  const planItems = PLAN_WEEK[todayKey] || [];
+  const container = document.getElementById('priorityGrid');
+
+  // eventsByName from data.json: { "NBA CLE @ TOR": { orders: 2840, volume: 112500 }, ... }
+  const evByName = data.eventsByName || {};
+
+  // Build actual rank sorted by orders desc
+  const sorted = Object.entries(evByName).sort((a,b) => b[1].orders - a[1].orders);
+  const actualRankMap = {};
+  sorted.forEach(([name], idx) => { actualRankMap[name.toLowerCase()] = idx + 1; });
+
+  function findMatch(planItem) {
+    const lower = planItem.toLowerCase();
+    // Try exact substring match
+    for (const [name, ev] of sorted) {
+      if (lower.includes(name.toLowerCase()) || name.toLowerCase().includes(lower.split(' ')[0])) {
+        return { name, orders: ev.orders, volume: ev.volume };
+      }
+    }
+    // Try team abbreviation match (e.g. "cle @ tor")
+    const teamMatch = lower.match(/([a-z]{2,4})\s*@\s*([a-z]{2,4})/);
+    if (teamMatch) {
+      const t1 = teamMatch[1], t2 = teamMatch[2];
+      for (const [name, ev] of sorted) {
+        const nl = name.toLowerCase();
+        if (nl.includes(t1) && nl.includes(t2)) {
+          return { name, orders: ev.orders, volume: ev.volume };
+        }
+      }
+    }
+    return null;
+  }
+
+  const maxOrders = sorted.length > 0 ? sorted[0][1].orders : 1;
+
+  const leftRows = planItems.map((item, i) => {
+    const sport = detectSport(item);
+    const clean = item.replace(/\s*\(.*?\)/g, '').replace(/\d+:\d+\s*(AM|PM)/i, '').trim();
+    const timeMatch = item.match(/\d+:\d+\s*(AM|PM)/i);
+    const time = timeMatch ? timeMatch[0] : '';
+    return `
+      <div class="priority-row">
+        <div class="pr-rank">${i+1}</div>
+        <div class="pr-content">
+          <div class="pr-market">
+            <span class="sport-badge badge-${sport}">${sport}</span>
+            ${clean}
+          </div>
+          ${time ? `<div class="pr-time">${time}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  const rightRows = planItems.map((item, i) => {
+    const rank = i + 1;
+    const match = findMatch(item);
+    const orders = match ? match.orders : null;
+    const volume = match ? match.volume : null;
+    const actualRank = match ? (actualRankMap[match.name.toLowerCase()] || null) : null;
+
+    let status = 'grey', statusClass = '';
+    if (actualRank !== null) {
+      const diff = actualRank - rank;
+      if (diff <= 0) { status = 'green'; statusClass = 'green'; }
+      else if (diff <= 3) { status = 'yellow'; statusClass = 'yellow'; }
+      else { status = 'red'; statusClass = 'red'; }
+    }
+
+    const barW = orders && maxOrders ? Math.round((orders / maxOrders) * 100) : 0;
+    const barColor = status === 'green' ? 'var(--green)' : status === 'yellow' ? 'var(--yellow)' : status === 'red' ? 'var(--red)' : 'var(--text3)';
+
+    return `
+      <div class="ov-row ${statusClass}">
+        <div>
+          <div class="ov-count">${orders != null ? formatCount(orders) : '<span class="ov-nodata">no data</span>'}</div>
+          <div class="ov-volume">${volume ? formatDollar(volume) : ''}</div>
+          ${orders != null ? `<div class="ov-bar-wrap"><div class="ov-bar" style="width:${barW}%;background:${barColor}"></div></div>` : ''}
+        </div>
+        <div></div>
+        <div class="ov-status ${status}"></div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div>
+      <div class="priority-col-header">PRIORITY SCHEDULE — ${todayKey}</div>
+      <div>${leftRows}</div>
+    </div>
+    <div>
+      <div class="priority-col-header" style="padding-left:16px">LIVE ORDERS &amp; VOLUME</div>
+      <div>${rightRows}</div>
+    </div>`;
+
+  document.getElementById('todayLabel').textContent =
+    new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+}
+
+// ============================================================
+//  SECTION 2: SPORT DONUT + TABLE
+// ============================================================
+let sportChartInst = null;
+function renderSportChart(data) {
+  const sportShare = data.sportShare || {};   // { "NBA": 3820, "MLB": 2915 }
+  const sportYest  = data.sportShareYest || {};
+  const entries = Object.entries(sportShare).sort((a,b) => b[1]-a[1]);
+  if (entries.length === 0) {
+    document.getElementById('sportTableWrap').innerHTML = '<div class="loading">No data</div>';
+    return;
+  }
+
+  const total = entries.reduce((s,[,v]) => s+v, 0);
+  const totalYest = Object.values(sportYest).reduce((s,v) => s+v, 0);
+  document.getElementById('ccTotal').textContent = formatCount(total);
+  document.getElementById('statOrders').textContent = formatCount(total);
+
+  const labels = entries.map(([k]) => k);
+  const values = entries.map(([,v]) => v);
+
+  const ctx = document.getElementById('sportChart').getContext('2d');
+  if (sportChartInst) sportChartInst.destroy();
+  sportChartInst = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: labels.map(sportColor),
+        borderColor: '#0c1829', borderWidth: 2, hoverBorderWidth: 3,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.label}: ${formatCount(c.raw)} (${((c.raw/total)*100).toFixed(1)}%)` } },
+      }
+    }
+  });
+
+  // Stat: total orders yesterday for delta
+  const totalYestOrders = Object.values(sportYest).reduce((a,b)=>a+b,0);
+  if (totalYestOrders > 0) {
+    const pct = ((total - totalYestOrders) / totalYestOrders) * 100;
+    const sign = pct > 0 ? '+' : '';
+    const cls = pct > 2 ? 'up' : pct < -2 ? 'down' : '';
+    const arrow = pct > 2 ? '▲' : pct < -2 ? '▼' : '→';
+    document.getElementById('statOrdersDelta').className = `stat-delta ${cls}`;
+    document.getElementById('statOrdersDelta').textContent = `${arrow} ${sign}${pct.toFixed(0)}% vs yday`;
+  }
+
+  // Sport table
+  const rows = entries.map(([sport, count], i) => {
+    const pct = total > 0 ? ((count/total)*100).toFixed(1) : '0.0';
+    const yestCount = sportYest[sport] || 0;
+    const yestPct = totalYest > 0 ? (yestCount/totalYest)*100 : 0;
+    const thisPct = total > 0 ? (count/total)*100 : 0;
+    let delta = '', deltaClass = 'delta-flat';
+    if (yestPct > 0) {
+      const diff = thisPct - yestPct;
+      deltaClass = diff > 1 ? 'delta-up' : diff < -1 ? 'delta-down' : 'delta-flat';
+      delta = `${diff > 0 ? '+' : ''}${diff.toFixed(1)}pp`;
+    }
+    const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${sportColor(sport)};margin-right:6px"></span>`;
+    return `<tr>
+      <td class="rank-num">${i+1}</td>
+      <td>${dot}<span class="sport-badge badge-${sport}">${sport}</span></td>
+      <td>${formatCount(count)}</td>
+      <td class="pct">${pct}%</td>
+      <td class="delta ${deltaClass}">${delta}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('sportTableWrap').innerHTML = `
+    <table class="sport-table">
+      <thead><tr><th>#</th><th>Sport</th><th>Orders</th><th>Share</th><th>vs Yday</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  if (entries.length > 0) document.getElementById('statTopSport').textContent = entries[0][0];
+}
+
+// ============================================================
+//  SECTION 3: HORIZONTAL BAR CHARTS
+// ============================================================
+let marketChartInst = null, sourceChartInst = null;
+
+function renderBarChart(canvasId, dataObj, existingChart, accentColor) {
+  const entries = Object.entries(dataObj).sort((a,b) => b[1]-a[1]).slice(0, 8);
+  if (entries.length === 0) return existingChart;
+  const labels = entries.map(([k]) => k);
+  const values = entries.map(([,v]) => v);
+  const palette = [accentColor,'#00a8cc','#0078a8','#00547a','#003d60','#002a4a','#001e38','#001428'];
+
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  if (existingChart) existingChart.destroy();
+  return new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data: values, backgroundColor: palette.slice(0, entries.length), borderRadius: 4, borderSkipped: false }] },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${formatCount(c.raw)} orders` } },
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a9bb8', font: { size: 11 } } },
+        y: { grid: { display: false }, ticks: { color: '#dde8f5', font: { size: 11 } } },
+      }
+    }
+  });
+}
+
+// ============================================================
+//  SECTION 4: TOP EVENTS
+// ============================================================
+function renderTopEvents(containerId, events) {
+  if (!events || events.length === 0) {
+    document.getElementById(containerId).innerHTML = '<div class="loading">No data</div>';
+    return;
+  }
+  const html = events.slice(0, 10).map((ev, i) => {
+    const rank = i + 1;
+    const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
+    const sport = ev.sport || detectSport(ev.name);
+    return `
+      <div class="top-event-row">
+        <div class="te-rank ${rankClass}">${rank}</div>
+        <div class="te-info">
+          <div class="te-name">${ev.name}</div>
+          <div class="te-meta"><span class="sport-badge badge-${sport}">${sport}</span></div>
+        </div>
+        <div class="te-stats">
+          <div class="te-count">${formatCount(ev.orders)} orders</div>
+          ${ev.volume ? `<div class="te-vol">${formatDollar(ev.volume)}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById(containerId).innerHTML = `<div class="top-events-list">${html}</div>`;
+}
+
+// ============================================================
+//  RENDER ALL SECTIONS FROM data.json payload
+// ============================================================
+function renderAll(data) {
+  // Stats bar
+  const totalVol = data.tradeVolume || 0;
+  document.getElementById('statVolume').textContent = totalVol > 0 ? formatDollar(totalVol) : '—';
+  const marketTypes = data.marketTypes || {};
+  document.getElementById('statMarkets').textContent = Object.keys(marketTypes).length || '—';
+
+  // Last updated
+  if (data.lastUpdated) {
+    const d = new Date(data.lastUpdated);
+    const mins = Math.round((Date.now() - d) / 60000);
+    const timeStr = d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+    document.getElementById('lastUpdated').textContent = `Updated ${timeStr} (${mins}m ago)`;
+    // Show stale banner if data is older than 20 min
+    document.getElementById('staleBanner').style.display = mins > 20 ? 'block' : 'none';
+  }
+
+  // Week label
+  const mon = getMondayDate();
+  document.getElementById('weekLabel').textContent =
+    `${mon.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – Today`;
+
+  renderPrioritySection(data);
+  renderSportChart(data);
+  marketChartInst = renderBarChart('marketChart', marketTypes, marketChartInst, '#009cde');
+  sourceChartInst = renderBarChart('sourceChart', data.sources || {}, sourceChartInst, '#00d4ff');
+  renderTopEvents('topTodayWrap', data.topEventsToday || []);
+  renderTopEvents('topWeekWrap', data.topEventsWeek || []);
+}
+
+// ============================================================
+//  AUTO-REFRESH (10 min — matches GitHub Actions cadence)
+// ============================================================
+const REFRESH_INTERVAL = 10 * 60;
+let refreshTimer = REFRESH_INTERVAL;
+let countdownInterval = null;
+
+function startCountdown() {
+  refreshTimer = REFRESH_INTERVAL;
+  if (countdownInterval) clearInterval(countdownInterval);
+  countdownInterval = setInterval(() => {
+    refreshTimer--;
+    const mins = Math.floor(refreshTimer / 60);
+    const secs = String(refreshTimer % 60).padStart(2, '0');
+    document.getElementById('countdown').textContent = `Next check: ${mins}:${secs}`;
+    if (refreshTimer <= 0) refreshAll();
+  }, 1000);
+}
+
+async function refreshAll() {
+  const btn = document.getElementById('refreshBtn');
+  btn.textContent = '↻ Loading…';
+  btn.disabled = true;
+  try {
+    const data = await fetchData();
+    renderAll(data);
+  } catch (err) {
+    console.error('Failed to load data.json:', err);
+    // Show error in priority grid if it's still showing loading
+    const grid = document.getElementById('priorityGrid');
+    if (grid.querySelector('.loading')) {
+      grid.innerHTML = `
+        <div class="error-state" style="grid-column:1/-1">
+          <div class="err-icon">⚠️</div>
+          <div class="err-title">Could not load data</div>
+          <div class="err-detail">data.json not found. Make sure the GitHub Actions workflow has run at least once.<br>Check the repo → Actions tab for details.</div>
+        </div>`;
+    }
+  } finally {
+    btn.textContent = '↻ Refresh Now';
+    btn.disabled = false;
+    startCountdown();
+  }
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', refreshAll);
+</script>
+</body>
+</html>
